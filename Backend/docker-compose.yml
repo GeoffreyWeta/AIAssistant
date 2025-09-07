@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: aiapp:latest
+    container_name: aiapp
+    ports:
+      - "8000:8000"
+    # Healthcheck for both profiles
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+    # DEV profile
+    profiles: ["dev"]
+    env_file:
+      - ./.env
+    volumes:
+      - ./app:/app/app
+      - ./vector_db:/app/vector_db
+      - ./temp_uploads:/app/temp_uploads
+      - ./reports:/app/reports
+      - ./.env:/app/.env:ro
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  api-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: aiapp:latest
+    container_name: aiapp-prod
+    profiles: ["prod"]
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      DEFAULT_LLM: ${DEFAULT_LLM:-openai}
+      DEFAULT_TONE: ${DEFAULT_TONE:-human}
+      VECTOR_DB_DIR: /app/vector_db
+      TEMP_UPLOADS_DIR: /app/temp_uploads
+      REPORTS_DIR: /app/reports
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-25}
+    volumes:
+      - vector_db:/app/vector_db
+      - temp_uploads:/app/temp_uploads
+      - reports:/app/reports
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    # Uses Dockerfile default CMD, multi worker, no reload
+
+volumes:
+  vector_db:
+  temp_uploads:
+  reports:

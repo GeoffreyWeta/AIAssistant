@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+.env
+.git
+.gitignore
+.vscode/
+.idea/
+dist/
+build/
+reports/*.pdf
+temp_uploads/*
+vector_db/*
+node_modules/
